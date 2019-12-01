@@ -22,9 +22,9 @@
 //      3.2 Check the number of items after stripped by comma == the number of fields in 2.7
 //      3.3 Check quotation validation
 //      3.4 Record the index of field that's surrounded by ""
-//      3.5 Make sure the fields that are supposed to be surrounded by "" are indeed surrounded by "" (Compare 3.4 and 2.4)
-//      3.6 Remove the outermost quotation marks if there are any
-//      3.4 Update the name count
+//      3.5 Remove the outermost quotation marks if there are any
+//      3.6 Make sure the fields that are supposed to be surrounded by "" are indeed surrounded by "" (Compare 3.4 and 2.4)
+//      3.7 Update the name count
 
 // Part 4. Check the length of the file <= 20,000 lines.
 
@@ -39,10 +39,37 @@ typedef  struct CSV_row_Struct{
 } csv_row;
 
 
+typedef struct Tweeter{
+    char* name;
+    int num_occur;
+} tweeter;
+
+
+typedef struct Name_list{
+    tweeter *tweeter_array;
+    int list_size;
+} name_list;
 
 void print_error(){
     fprintf(stderr, "Invalid Input Format\n");
 }
+
+
+
+void free_csv_row(csv_row *row){
+    if (row->quotation_index != NULL){
+        free(row->quotation_index);
+        row->quotation_index = NULL;
+    }
+    if (row->col != NULL){
+        for (int i=0; i < row->num_col; i++){
+            free(row->col[i]);
+        }
+        free(row->col);
+        row->col = NULL;
+    }
+}
+
 
 
 void remove_newline(csv_row *head){
@@ -57,26 +84,24 @@ void remove_newline(csv_row *head){
 }
 
 
-void parse_header(char *lineBuf, csv_row *head){
-    // parse header into tokens and record 2.7
-    head->col = NULL;
+void parse_row(char *lineBuf, csv_row *row){
+    // parse header into tokens and record number of fields separated by ","
+    row->col = NULL;
     char *token = NULL;
-    head->num_col = 0;
+    row->num_col = 0;
     token = strtok(lineBuf, ",");
-
     while( token != NULL ) {
-        head->num_col++;
-        head->col  = realloc(head->col , head->num_col*sizeof(*head->col));
-        head->col[head->num_col-1] = malloc((strlen(token)+1)* sizeof(char));
-        strcpy(head->col[head->num_col-1], token);
-        token = strtok(NULL, lineBuf);
+        row->num_col++;
+        row->col  = realloc(row->col , row->num_col*sizeof(*row->col));
+        row->col[row->num_col-1] = malloc((strlen(token)+1)* sizeof(char));
+        strcpy(row->col[row->num_col-1], token);
+        token = strtok(NULL, ",");
     }
-
-    remove_newline(&head);
+    remove_newline(row);
 }
 
 
-bool check_quotation_validatoin(char** string_list, int num_string){
+bool check_quotation_validation(char** string_list, int num_string){
     bool quotation_val = false;
     for (int i = 0; i < num_string; i++){
         if (string_list[i][0] =='"'){
@@ -114,40 +139,186 @@ bool check_duplicate_names(csv_row *head){
 
 
 bool check_name_exist(csv_row *head){
-    // check if name appears in the header (2.6)
+    // check if name appears in the header and record its index (2.6)
     bool name_exist = false;
     for (int i = 0; i < head->num_col; i++){
-        if ((strcmp(head->col[i]), "name") == 0){
+        if (strcmp(head->col[i], "name") == 0){
             name_exist = true;
+            head->name_col =i;
         }
     }
     return name_exist;
 }
 
 
-csv_row process_header(char *lineBuf){
-    csv_row head;
-    parse_header(lineBuf, &head);
-    if (!check_quotation_validatoin(head.col, head.num_col)){
-
+void shuffle_string(char* string){
+    // shuffle every character in the string to the left by 1 and remove the first and last characters of the string
+    int str_len = strlen(string);
+    for (int i = 0; i < str_len-1; i++){
+        int j = i+1;
+        string[i] = string[j];
     }
-    // CHECK 2.2 AND 2.6
-    if (check_duplicate_names(&head) && check_name_exist(&head)){
+    string[str_len-1] = '\0';
+    string[str_len-2] = '\0';
+}
 
+
+void remove_and_record_quotation(csv_row *row){
+    row->quotation_index = malloc(row->num_col*sizeof(bool));
+    for (int i = 0; i < row->num_col; i++){
+        if (row->col[i][0] =='"'){
+            row->quotation_index[i] = true;
+            shuffle_string(row->col[i]);
+        }else{
+            row->quotation_index[i] = false;
+        }
     }
-    return head;
 }
 
 
-void process_body(char *lineBuf){
 
+void process_header(char *lineBuf, csv_row *head){
+    // DO 2.7
+    parse_row(lineBuf, head);
+    // CHECK 2.3
+    if (check_quotation_validation(head->col, head->num_col)){
+        // DO 2.4 AND 2.5
+        remove_and_record_quotation(head);
+        // CHECK 2.2 AND 2.6
+        if (check_duplicate_names(head) && check_name_exist(head)){
+            return;
+        }
+    }
+    // some checking didn't pass, free everything we have so far and terminate the program
+    free_csv_row(head);
+    free(lineBuf);
+    print_error();
+    exit(EXIT_FAILURE);
 }
 
 
-void get_top_ten(){
-
+bool compare_quotation_index(const bool *head_bool, const bool *body_bool, int size){
+    bool same_bool_array = false;
+    for (int i = 0; i < size; i++){
+        if (head_bool[i] != body_bool[i]){
+            return same_bool_array;
+        }
+    }
+    same_bool_array = true;
+    return same_bool_array;
 }
 
+
+void first_time_update(name_list *nameList, char* name){
+    char *name_cpy = malloc((strlen(name)+1)* sizeof(char));
+    int list_size = nameList->list_size;
+    strcpy(name_cpy,name);
+    nameList->tweeter_array = realloc(nameList->tweeter_array, (list_size+1)*sizeof(*nameList->tweeter_array));
+    nameList->tweeter_array[list_size].name = name_cpy;
+    nameList->tweeter_array[list_size].num_occur = 1;
+    nameList->list_size++;
+}
+
+
+void not_first_time_update(name_list *nameList, int index){
+    nameList->tweeter_array[index].num_occur ++;
+}
+
+
+void update_name_list(name_list *nameList, csv_row *body){
+    char* name = body->col[body->name_col];
+    if (nameList->list_size == 0){
+        first_time_update(nameList, name);
+    }else{
+        for (int i = 0; i < nameList->list_size; i++){
+            if (strcmp(name, nameList->tweeter_array[i].name) == 0){
+                not_first_time_update(nameList, i);
+                return;
+            }
+        }
+        first_time_update(nameList, name);
+    }
+    return;
+}
+
+
+
+void process_body(char *lineBuf, csv_row *body, csv_row *head, name_list *nameList){
+    parse_row(lineBuf, body);
+    // CHECK 3.2
+    if (body->num_col == head->num_col){
+        // CHECK 3.3
+        if (check_quotation_validation(body->col, body->num_col)){
+            // DO 3.4 AND 3.5
+            remove_and_record_quotation(body);
+            // CHECK 3.6
+            if (compare_quotation_index(head->quotation_index, body->quotation_index, head->num_col)){
+                // DO 3.7
+                update_name_list(nameList, body);
+                return;
+            }
+        }
+    }
+    // some checking didn't pass, free everything we have so far and terminate the program
+    free_csv_row(head);
+    free_csv_row(body);
+    free(lineBuf);
+    print_error();
+    exit(EXIT_FAILURE);
+}
+
+
+int compare_tweeter (const void * a, const void * b){
+    const tweeter* lhs = (const tweeter*)a;
+    const tweeter* rhs = (const tweeter*)b;
+    return (rhs->num_occur - lhs->num_occur);
+}
+
+
+void print_top_tweeters(name_list *nameList, int range){
+    for (int i = 0; i < range; i++){
+        printf("%s: %d\n",nameList->tweeter_array[i].name, nameList->tweeter_array[i].num_occur);
+    }
+}
+
+void get_top_ten(name_list *nameList){
+    qsort(nameList->tweeter_array, nameList->list_size, sizeof(tweeter), compare_tweeter);
+    if(nameList->list_size > 10){
+        print_top_tweeters(nameList, 10);
+    }
+    if((nameList->list_size < 10) && (nameList->list_size != 0)){
+        print_top_tweeters(nameList, nameList->list_size);
+    }
+    if (nameList->list_size == 0){
+        return;
+    }
+}
+
+
+void check_line_length(ssize_t byte_read, char* lineBuf){
+    if (byte_read > 1024){
+        print_error();
+        free (lineBuf);
+        exit(EXIT_FAILURE);
+    }
+}
+
+
+void initialize_for_get_line(char** lineBuf, size_t* lineSize){
+    if (*lineBuf != NULL){
+        free (*lineBuf);
+    }
+    *lineBuf = NULL;
+    *lineSize = 0;
+    errno = 0;
+}
+
+
+void free_name_list(name_list *nameList){
+    for(int i = 0; i < nameList->list_size; i++){
+        free(nameList->tweeter_array[i].name);
+    }
+}
 
 void process_file(const char *filePathname){
     FILE *fp;
@@ -156,6 +327,8 @@ void process_file(const char *filePathname){
     char *lineBuf = NULL;
     int rowCount = 0;
     fp = fopen(filePathname, "r");
+    csv_row head = {-1, NULL, NULL, -1};
+    name_list nameList ={NULL, 0};
 
     // CHECK 1.2
     if (fp == NULL){
@@ -163,48 +336,45 @@ void process_file(const char *filePathname){
         exit(EXIT_FAILURE);
     }else{
         errno = 0;
-        while ((byte_read = getline(&lineBuf, &lineSize, fp)) != (-1)){
-            // CHECK 2.1 AND 3.1
-            if (byte_read > 1024){
-                print_error();
-                free (lineBuf);
-                exit(EXIT_FAILURE);
-            }
+        // CHECK Part 2 (Header Part)
+        if ((byte_read = getline(&lineBuf, &lineSize, fp)) != (-1)){
+            // CHECK 2.1
+            check_line_length(byte_read, lineBuf);
             rowCount++;
-            if (rowCount ==1){
-                // CHECK Part 2
-                csv_row head = process_header(lineBuf);
-            }else{
-                // CHECK Part 3
-                process_body(lineBuf);
-            }
-            free (lineBuf);
-            lineBuf = NULL;
-            lineSize = 0;
-            errno = 0;
+            process_header(lineBuf, &head);
+            initialize_for_get_line(&lineBuf, &lineSize);
         }
-
+        // CHECK Part 3 (Body Part)
+        while ((byte_read = getline(&lineBuf, &lineSize, fp)) != (-1)){
+            // CHECK 3.1
+            check_line_length(byte_read, lineBuf);
+            rowCount++;
+            csv_row body = {head.name_col, NULL, NULL, 0};
+            process_body(lineBuf, &body, &head, &nameList);
+            initialize_for_get_line(&lineBuf, &lineSize);
+            free_csv_row(&body);
+        }
         // In case if getline() returns -1 NOT because of EOF
         if (errno != 0){
             if (lineBuf != NULL){
-                free (lineBuf);
+                free_csv_row(&head);
             }
             print_error();
             exit(EXIT_FAILURE);
         }
-
         // CHECK Part 4
         if (rowCount > 20000){
+            free_csv_row(&head);
             print_error();
             exit(EXIT_FAILURE);
         }else{
             // DO Part 5
-            get_top_ten();
+            free_csv_row(&head);
+            get_top_ten(&nameList);
+            free_name_list(&nameList);
         }
     }
-
 }
-
 
 
 
