@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <string.h>
+#include <ctype.h>
 
 // Part 1. Get Command Line Argument
 //    1.1 Check get exactly ONE command line argument
@@ -19,12 +20,13 @@
 
 // Part 3. Get line by line (after Header)
 //      3.1 Check line length <= 1024 characters
-//      3.2 Check the number of items after stripped by comma == the number of fields in 2.7
+//      3.2 Check the number of items after stripped by comma == the number of fields in 2.7 or if it is an empty line
 //      3.3 Check quotation validation
 //      3.4 Record the index of field that's surrounded by ""
 //      3.5 Remove the outermost quotation marks if there are any
 //      3.6 Make sure the fields that are supposed to be surrounded by "" are indeed surrounded by "" (Compare 3.4 and 2.4)
 //      3.7 Update the name count
+
 
 // Part 4. Check the length of the file <= 20,000 lines.
 
@@ -49,6 +51,7 @@ typedef struct Name_list{
     tweeter *tweeter_array;
     int list_size;
 } name_list;
+
 
 void print_error(){
     fprintf(stderr, "Invalid Input Format\n");
@@ -85,7 +88,7 @@ void remove_newline(csv_row *head){
 
 
 void parse_row(char *lineBuf, csv_row *row){
-    // parse header into tokens and record number of fields separated by ","
+    // parse header into tokens, and record number of fields separated by ","
     row->col = NULL;
     char *token = NULL;
     row->num_col = 0;
@@ -242,10 +245,21 @@ void update_name_list(name_list *nameList, csv_row *body){
 }
 
 
+bool check_empty_string(char *string){
+    bool is_empty = false;
+    for (unsigned long i = 0; i < strlen(string); i++){
+        if (isspace(string[i]) == 0){
+            return is_empty;
+        }
+    }
+    is_empty = true;
+    return is_empty;
+}
+
 
 void process_body(char *lineBuf, csv_row *body, csv_row *head, name_list *nameList){
     parse_row(lineBuf, body);
-    // CHECK 3.2
+    // CHECK 3.2 (first half)
     if (body->num_col == head->num_col){
         // CHECK 3.3
         if (check_quotation_validation(body->col, body->num_col)){
@@ -259,6 +273,14 @@ void process_body(char *lineBuf, csv_row *body, csv_row *head, name_list *nameLi
             }
         }
     }
+
+    // CHECK 3.2 (second half)
+    if (body->num_col == 1){
+        if(check_empty_string(body->col[0])){
+            return;
+        }
+    }
+
     // some checking didn't pass, free everything we have so far and terminate the program
     free_csv_row(head);
     free_csv_row(body);
