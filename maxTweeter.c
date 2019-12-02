@@ -87,21 +87,21 @@ void remove_newline(csv_row *head){
 }
 
 
+
 void parse_row(char *lineBuf, csv_row *row){
     // parse header into tokens, and record number of fields separated by ","
     row->col = NULL;
     char *token = NULL;
     row->num_col = 0;
-    token = strtok(lineBuf, ",");
-    while( token != NULL ) {
+    while( (token = strsep(&lineBuf, ",")) != NULL) {
         row->num_col++;
         row->col  = realloc(row->col , row->num_col*sizeof(*row->col));
         row->col[row->num_col-1] = malloc((strlen(token)+1)* sizeof(char));
         strcpy(row->col[row->num_col-1], token);
-        token = strtok(NULL, ",");
     }
     remove_newline(row);
 }
+
 
 
 bool check_quotation_validation(char** string_list, int num_string){
