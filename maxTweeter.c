@@ -59,7 +59,9 @@ void print_error(){
 }
 
 
-// Free the dynamically allocated space inside csv_row *row if any
+/*
+ * Free the dynamically allocated space inside csv_row *row if any
+ */
 void free_csv_row(csv_row *row){
     if (row->quotation_index != NULL){
         free(row->quotation_index);
@@ -75,7 +77,9 @@ void free_csv_row(csv_row *row){
 }
 
 
-// Change the new line character(s) of the last string in csv_row *head->col to '\0'
+/*
+ * Change the new line character(s) of the last string in csv_row *head->col to '\0'
+ */
 void remove_newline(csv_row *head){
     char* last_field = head->col[(head->num_col)-1];
     int last_field_len = strlen(last_field);
@@ -88,7 +92,9 @@ void remove_newline(csv_row *head){
 }
 
 
-// Use char *lineBuf to update csv_row *row
+/*
+ * Use char *lineBuf to update csv_row *row
+ */
 void parse_row(char *lineBuf, csv_row *row){
     row->col = NULL;
     char *token = NULL;
@@ -103,8 +109,10 @@ void parse_row(char *lineBuf, csv_row *row){
 }
 
 
-// Check for quotation validation of every string in string_list: 1. if string starts with ", it must end with ";
-// 2. if string ends with ", it must start with "
+/*
+ * Check for quotation validation of every string in string_list: 1. if string starts with ", it must end with ";
+ * 2. if string ends with ", it must start with "
+ */
 bool check_quotation_validation(char** string_list, int num_string){
     bool quotation_val = false;
     for (int i = 0; i < num_string; i++){
@@ -125,7 +133,9 @@ bool check_quotation_validation(char** string_list, int num_string){
 
 
 
-// Check for duplicate strings in csv_row *head->col (2.2)
+/*
+ * Check for duplicate strings in csv_row *head->col (2.2)
+ */
 bool check_duplicate_names(csv_row *head){
     bool no_duplicate = false;
     for (int i = 0; i < head->num_col; i++){
@@ -140,7 +150,9 @@ bool check_duplicate_names(csv_row *head){
 }
 
 
-// Check if name appears in the header (csv_row *head) and record its index (2.6)
+/*
+ * Check if name appears in the header (csv_row *head) and record its index (2.6)
+ */
 bool check_name_exist(csv_row *head){
     bool name_exist = false;
     for (int i = 0; i < head->num_col; i++){
@@ -153,7 +165,9 @@ bool check_name_exist(csv_row *head){
 }
 
 
-// Shuffle every character in char* string to the left by 1 and remove the first and last characters of the string
+/*
+ * Shuffle every character in char* string to the left by 1 and remove the first and last characters of the string
+ */
 void shuffle_string(char* string){
     int str_len = strlen(string);
     for (int i = 0; i < str_len-1; i++){
@@ -165,7 +179,9 @@ void shuffle_string(char* string){
 }
 
 
-// Record if string(s) in csv_row *row->col starts with ", and remove the quotation marks if they exist
+/*
+ * Record if string(s) in csv_row *row->col starts with ", and remove the quotation marks if they exist
+ */
 void remove_and_record_quotation(csv_row *row){
     row->quotation_index = malloc(row->num_col*sizeof(bool));
     for (int i = 0; i < row->num_col; i++){
@@ -179,8 +195,10 @@ void remove_and_record_quotation(csv_row *row){
 }
 
 
-// Use char *lineBuf to process header (csv_row *head) [2.2~2.7], and free the dynamically allocated space
-// inside char *lineBuf and csv_row *row if header has incorrect format.
+/*
+ * Use char *lineBuf to process header (csv_row *head) [2.2~2.7], and free the dynamically allocated space
+ * inside char *lineBuf and csv_row *row if header has incorrect format.
+ */
 void process_header(char *lineBuf, csv_row *head){
     // DO 2.7
     parse_row(lineBuf, head);
@@ -201,7 +219,9 @@ void process_header(char *lineBuf, csv_row *head){
 }
 
 
-// Compare if two bool arrays (*head_bool and *body_bool) have the same contents.
+/*
+ * Compare if two bool arrays (*head_bool and *body_bool) have the same contents.
+ */
 bool compare_quotation_index(const bool *head_bool, const bool *body_bool, int size){
     bool same_bool_array = false;
     for (int i = 0; i < size; i++){
@@ -214,8 +234,10 @@ bool compare_quotation_index(const bool *head_bool, const bool *body_bool, int s
 }
 
 
-// Allocate space for the new tweeter (char* name) in *nameList->tweeter_array. Store name at the end of
-// *nameList->tweeter_array and update its number of occurrence to 1.
+/*
+ * Allocate space for the new tweeter (char* name) in *nameList->tweeter_array. Store name at the end of
+ * *nameList->tweeter_array and update its number of occurrence to 1.
+ */
 void first_time_update(name_list *nameList, char* name){
     char *name_cpy = malloc((strlen(name)+1)* sizeof(char));
     int list_size = nameList->list_size;
@@ -227,14 +249,18 @@ void first_time_update(name_list *nameList, char* name){
 }
 
 
-// Increment the num_occur for the (index)th tweeter in name_list *nameList->tweeter_array
+/*
+ * Increment the num_occur for the (index)th tweeter in name_list *nameList->tweeter_array
+ */
 void not_first_time_update(name_list *nameList, int index){
     nameList->tweeter_array[index].num_occur ++;
 }
 
 
-// Use csv_row *body to update name_list *nameList (record name if it's never seen before and always increment this
-// name's number of occurrence)
+/*
+ * Use csv_row *body to update name_list *nameList (record name if it's never seen before and always increment this
+ * name's number of occurrence)
+ */
 void update_name_list(name_list *nameList, csv_row *body){
     char* name = body->col[body->name_col];
     if (nameList->list_size == 0){
@@ -252,7 +278,9 @@ void update_name_list(name_list *nameList, csv_row *body){
 }
 
 
-// Check if every character in char *string is whitespace
+/*
+ * Check if every character in char *string is whitespace
+ */
 bool check_empty_string(char *string){
     bool is_empty = false;
     for (unsigned long i = 0; i < strlen(string); i++){
@@ -265,8 +293,10 @@ bool check_empty_string(char *string){
 }
 
 
-// Use char *lineBuf to process a body row (csv_row *head) [3.2~3.7], and free the dynamically allocated space
-// inside char *lineBuf and csv_row *row if the body row has incorrect format.
+/*
+ * Use char *lineBuf to process a body row (csv_row *head) [3.2~3.7], and free the dynamically allocated space
+ * inside char *lineBuf and csv_row *row if the body row has incorrect format.
+ */
 void process_body(char *lineBuf, csv_row *body, csv_row *head, name_list *nameList){
     parse_row(lineBuf, body);
     // CHECK 3.2 (first half)
@@ -298,7 +328,9 @@ void process_body(char *lineBuf, csv_row *body, csv_row *head, name_list *nameLi
 }
 
 
-// Compare tweeters by their num_occur (helper function for qsort() in get_top_ten(name_list *nameList))
+/*
+ * Compare tweeters by their num_occur (helper function for qsort() in get_top_ten(name_list *nameList))
+ */
 int compare_tweeter (const void * a, const void * b){
     const tweeter* lhs = (const tweeter*)a;
     const tweeter* rhs = (const tweeter*)b;
@@ -306,7 +338,9 @@ int compare_tweeter (const void * a, const void * b){
 }
 
 
-// Print the top (range) tweeters in name_list *nameList whose names appear the most and their num_occur
+/*
+ * Print the top (range) tweeters in name_list *nameList whose names appear the most and their num_occur
+ */
 void print_top_tweeters(name_list *nameList, int range){
     for (int i = 0; i < range; i++){
         printf("%s: %d\n",nameList->tweeter_array[i].name, nameList->tweeter_array[i].num_occur);
@@ -314,8 +348,10 @@ void print_top_tweeters(name_list *nameList, int range){
 }
 
 
-// Sort the names in name_list *nameList->tweeter_array by their num_occur, and print the top 10 (or all if there
-// aren't 10 tweeters in the array) tweeters whose names appear the most and their num_occur
+/*
+ * Sort the names in name_list *nameList->tweeter_array by their num_occur, and print the top 10 (or all if there
+ * aren't 10 tweeters in the array) tweeters whose names appear the most and their num_occur
+ */
 void get_top_ten(name_list *nameList){
     qsort(nameList->tweeter_array, nameList->list_size, sizeof(tweeter), compare_tweeter);
     if(nameList->list_size > 10){
@@ -330,7 +366,9 @@ void get_top_ten(name_list *nameList){
 }
 
 
-// Check if char* lineBuf has more than 1024 characters and free lineBuf if check doesn't pass
+/*
+ * Check if char* lineBuf has more than 1024 characters and free lineBuf if check doesn't pass
+ */
 void check_line_length(ssize_t byte_read, char* lineBuf){
     if (byte_read > 1024){
         print_error();
@@ -340,7 +378,9 @@ void check_line_length(ssize_t byte_read, char* lineBuf){
 }
 
 
-// Free char** lineBuf if needed and update lineSize and errno to initial value
+/*
+ * Free char** lineBuf if needed and update lineSize and errno to initial value
+ */
 void initialize_for_get_line(char** lineBuf, size_t* lineSize){
     if (*lineBuf != NULL){
         free (*lineBuf);
@@ -351,7 +391,9 @@ void initialize_for_get_line(char** lineBuf, size_t* lineSize){
 }
 
 
-// Free the dynamically allocated space in name_list *nameList->tweeter_array[i].name
+/*
+ * Free the dynamically allocated space in name_list *nameList->tweeter_array[i].name
+ */
 void free_name_list(name_list *nameList){
     for(int i = 0; i < nameList->list_size; i++){
         free(nameList->tweeter_array[i].name);
@@ -359,9 +401,11 @@ void free_name_list(name_list *nameList){
 }
 
 
-// Use the given file path (const char *filePathname) to process the file and print the top 10 (or all if there aren't
-// 10 names in the file) tweeters' names and their number of appearance if the file has the correct format. Free any
-// dynamically allocated space along the way
+/*
+ * Use the given file path (const char *filePathname) to process the file and print the top 10 (or all if there aren't
+ * 10 names in the file) tweeters' names and their number of appearance if the file has the correct format. Free any
+ * dynamically allocated space along the way
+ */
 void process_file(const char *filePathname){
     FILE *fp;
     size_t lineSize = 0;
